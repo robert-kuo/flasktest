@@ -60,4 +60,4 @@ jobs:
         with:
           app-name: 'WebPlate01'
           slot-name: 'Production'
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_16AB70B664B44426A8D457B22016AF39 }}
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_F7F862776CBA461CB6B0A3A376D80719 }}
