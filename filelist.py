@@ -2,7 +2,7 @@ from os import listdir
 from os.path import isfile, isdir, join
 
 # 指定要列出所有檔案的目錄
-mypath = "/var/log"
+mypath = "/aidata"
 
 # 取得所有檔案與子目錄名稱
 files = listdir(mypath)
