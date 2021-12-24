@@ -30,4 +30,10 @@ def hello():
 @myapp.route("/test")
 @auth.login_required
 def test():
-    return "function test."
+    return 'function test.'
+
+@myapp.route('/TS/v0.1/Task',  methods = ['GET'])
+@auth.login_required
+def get_tasks():
+    s, ret = Opt_func.DirList(mainpath, '', 'Tasks')
+    return jsonify(s)
