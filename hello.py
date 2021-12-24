@@ -59,7 +59,7 @@ def get_task(taskname):
     if ret != 200: abort(ret)
     return jsonify(s), ret
 
-@app.route('/TS/v0.1/Task/<string:taskname>',  methods = ['DELETE'])
+@myapp.route('/TS/v0.1/Task/<string:taskname>',  methods = ['DELETE'])
 @auth.login_required
 def delete_task(taskname):
     ret = Opt_func.DeleteTask(mainpath, taskname, '')
