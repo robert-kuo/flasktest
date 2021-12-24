@@ -52,3 +52,9 @@ def create_task():
         ret = Opt_func.savefile(mainpath, s, sfile, '', 'Setting')
         if ret != 201 and ret != 205: abort(ret)
     return jsonify(json_task), ret
+
+@myapp.route('/TS/v0.1/Task/<string:taskname>',  methods = ['GET'])
+def get_task(taskname):
+    s, ret = Opt_func.OpenJsonFile(mainpath, taskname, 'TaskConfig.json', 'Task')
+    if ret != 200: abort(ret)
+    return jsonify(s), ret

@@ -45,6 +45,18 @@ def Create_TaskConfig(mainpath, taskname):
         json.dump(s, fn_json, ensure_ascii=False)
     return s
 
+def OpenJsonFile(mainpath, taskname, jfile, DefaultTitle):
+    s = os.path.join(os.path.join(mainpath, taskname), jfile)
+    if os.path.isfile(s):
+        fn_json = open(s, 'r')
+        json_data = json.load(fn_json)
+        fn_json.close()
+        ret = 200
+    else:
+        json_data = {DefaultTitle: ''}
+        ret = 404
+    return json_data, ret
+
 def savefile(mainpath, taskname, file, newfilename, attribvalue):
     filename = newfilename if newfilename != '' else file.filename
     if taskname == '':
