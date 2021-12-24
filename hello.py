@@ -9,7 +9,7 @@ if os.name == 'nt':
     mainpath = 'd:\\opt_web'
     ip = Opt_func.GetIP()
 else:
-    mainpath = '/aidata'
+    mainpath = '/home'
     ip = ''
 
 auth = HTTPBasicAuth()
