@@ -1,5 +1,5 @@
 from flask import Flask
-from flask import request, abort, jsonify, make_response
+from flask import request, abort, jsonify, make_response, redirect
 
 import os
 import Opt_func
@@ -65,3 +65,15 @@ def delete_task(taskname):
     ret = Opt_func.DeleteTask(mainpath, taskname, '')
     if ret != 200: abort(ret)
     return '', ret
+
+@myapp.route('/TS/v0.1/Task/<string:taskname>/Evaluate',  methods = ['GET'])
+@auth.login_required
+def Evaluate(taskname):
+    return redirect('http://test/RS/v0.1/' + taskname + '/Evaluate', code=302)
+
+@myapp.route('/TS/v0.1/Task/<string:taskname>/<string:dirname>',  methods = ['GET'])
+@auth.login_required
+def Dataset_Files(taskname, dirname):
+    s, ret = Opt_func.FileList(mainpath, taskname, dirname)
+    if ret != 200: abort(ret)
+    return jsonify(s), ret
