@@ -1,4 +1,5 @@
-from flask import Flask, jsonify, make_response
+from flask import Flask
+from flask import request, abort, jsonify, make_response
 
 import os
 import Opt_func
@@ -27,13 +28,28 @@ def unauthorized():
 def hello():
     return 'Hello World! ' +  mainpath + 'ip: ' + ip
 
-@myapp.route("/test")
-@auth.login_required
-def test():
-    return 'function test.'
-
 @myapp.route('/TS/v0.1/Task',  methods = ['GET'])
 @auth.login_required
 def get_tasks():
     s, ret = Opt_func.DirList(mainpath, '', 'Tasks')
     return jsonify(s)
+
+@myapp.route('/TS/v0.1/Task', methods = ['POST', 'PUT'])
+@auth.login_required
+def create_task():
+    taskname = request.form['Name']
+    print(taskname)
+    if request.method == 'POST':
+        s = Opt_func.Get_TaskName(mainpath, taskname)
+    else:
+        s = taskname
+    print(s)
+    if not os.path.isdir(os.path.join(mainpath, s)): abort(404)
+    json_task = Opt_func.Create_TaskConfig(mainpath, s)
+    cfile = request.files['Calendar']
+    ret = Opt_func.savefile(mainpath, s, cfile, '', 'Calendar')
+    if ret == 201 or ret == 205:
+        sfile = request.files['Setting']
+        ret = Opt_func.savefile(mainpath, s, sfile, '', 'Setting')
+        if ret != 201 and ret != 205: abort(ret)
+    return jsonify(json_task), ret
