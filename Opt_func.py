@@ -1,7 +1,7 @@
 import os
 import datetime as dt
 import json
-import pathlib
+import shutil, pathlib
 import socket
 
 def GetIP():
@@ -10,6 +10,19 @@ def GetIP():
     ret = s.getsockname()[0]
     s.close()
     return ret
+
+def FileList(mainpath, taskname, dirname):
+    spath = os.path.join(mainpath, taskname)           # mainpath + '\\' + taskname + '\\'
+    dpath = os.path.join(spath, dirname)
+    lst_file = []
+    if os.path.isdir(dpath):
+        ret = 200
+        lst_dir = os.listdir(dpath)
+        for x in lst_dir:
+            if os.path.isfile(os.path.join(dpath, x)): lst_file.append(x)
+    else:
+        ret = 404
+    return {"Files": lst_file}, ret
 
 def DirList(dirpath, dirFilter, label):
     lst_folder = []
@@ -56,6 +69,49 @@ def OpenJsonFile(mainpath, taskname, jfile, DefaultTitle):
         json_data = {DefaultTitle: ''}
         ret = 404
     return json_data, ret
+
+def DeleteTask(mainpath, taskname, dirname):
+    ret = 200
+    try:
+        if dirname == '':
+            spath = os.path.join(mainpath, taskname)
+        else:
+            spath = os.path.join(os.path.join(mainpath, taskname), dirname)
+        if os.path.isdir(spath):
+            #json_file, ret = {"Files", [dirname]}, 200 if dirname != '' else FileList(mainpath, taskname, 'StageLearning')
+            if dirname == '':
+                json_file, ret = FileList(mainpath, taskname, 'StageLearning')
+                ret = 200
+                lst_stage = json_file["Files"]
+            else:
+                lst_stage = [dirname]
+            isrun = False
+            for x in lst_stage:
+                isrun = StageisProcessing(mainpath, taskname, x)
+                if isrun: break
+            if isrun:
+                ret = 403
+            else:
+                shutil.rmtree(spath)
+        else:
+            ret = 404
+    except:
+        ret = 403
+    return ret
+
+def StageisProcessing(mainpath, taskname, dirname):
+    spath = os.path.join(os.path.join(mainpath, taskname), dirname)
+    sfile = os.path.join(spath, 'StageParameter.json')
+    ret = False
+    if os.path.isdir(spath) and os.path.isfile(sfile):
+        fn = open(sfile, 'r')
+        json_data = json.load(fn)
+        fn.close()
+        for x in json_data:
+            if json_data[x]['Practice'] == 'Processing':
+                ret = True
+                break
+    return ret
 
 def savefile(mainpath, taskname, file, newfilename, attribvalue):
     filename = newfilename if newfilename != '' else file.filename

@@ -58,3 +58,10 @@ def get_task(taskname):
     s, ret = Opt_func.OpenJsonFile(mainpath, taskname, 'TaskConfig.json', 'Task')
     if ret != 200: abort(ret)
     return jsonify(s), ret
+
+@app.route('/TS/v0.1/Task/<string:taskname>',  methods = ['DELETE'])
+@auth.login_required
+def delete_task(taskname):
+    ret = Opt_func.DeleteTask(mainpath, taskname, '')
+    if ret != 200: abort(ret)
+    return '', ret
