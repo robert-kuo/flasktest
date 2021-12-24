@@ -38,7 +38,6 @@ def get_tasks():
 @auth.login_required
 def create_task():
     taskname = request.form['Name']
-    print(taskname)
     if request.method == 'POST':
         s = Opt_func.Get_TaskName(mainpath, taskname)
     else:
