@@ -86,3 +86,23 @@ def Dataset_Files(taskname, dirname):
     s, ret = Opt_func.FileList(mainpath, taskname, dirname)
     if ret != 200: abort(ret)
     return jsonify(s), ret
+
+@myapp.route('/TS/v0.1/Task/<string:taskname>/StageLearning',  methods = ['GET'])
+@auth.login_required
+def Stage_Dirs(taskname):
+    s, ret = Opt_func.DirList(os.path.join(mainpath, taskname), 'StageLearning', taskname)
+    if ret != 200: abort(ret)
+    return jsonify(s), ret
+
+@myapp.route('/TS/v0.1/Task/<string:taskname>/StageLearning/NEW',  methods = ['POST'])
+@auth.login_required
+def NewStage(taskname):
+    stagename = Opt_func.NewStage(mainpath, taskname)
+    if Opt_func.StageisProcessing(mainpath, taskname, stagename):
+        ret = 403
+    else:
+        os.makedirs(os.path.join(os.path.join(mainpath, taskname), stagename))
+        sfile = request.files['StageParameter']
+        ret = Opt_func.savefile(mainpath, os.path.join(taskname, stagename), sfile, '', 'none')
+    if ret != 200 and ret != 201: abort(ret)
+    return stagename, 201

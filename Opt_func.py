@@ -348,6 +348,20 @@ def StageisProcessing(mainpath, taskname, dirname):
                 break
     return ret
 
+def Get_LastLearningNo(mainpath, taskname):
+    lst = os.listdir(os.path.join(mainpath, taskname))
+    i = 0
+    for x in lst:
+        if x[:13] == 'StageLearning':
+            m = int(x[14:].replace(')', ''))
+            if i < m: i = m
+    return i
+
+def NewStage(mainpath, taskname):
+    n = Get_LastLearningNo(mainpath, taskname)
+    sName = 'StageLearning(' + str(n+1) + ')'
+    return sName
+
 def savefile(mainpath, taskname, file, newfilename, attribvalue):
     filename = newfilename if newfilename != '' else file.filename
     if taskname == '':
