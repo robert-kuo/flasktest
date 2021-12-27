@@ -106,3 +106,10 @@ def NewStage(taskname):
         ret = Opt_func.savefile(mainpath, os.path.join(taskname, stagename), sfile, '', 'none')
     if ret != 200 and ret != 201: abort(ret)
     return stagename, 201
+
+@myapp.route('/TS/v0.1/Task/<string:taskname>/<string:dirname>',  methods = ['DELETE'])
+@auth.login_required
+def delete_stage(taskname, dirname):
+    ret = Opt_func.DeleteTask(mainpath, taskname, dirname)
+    if ret != 200: abort(ret)
+    return '', ret
