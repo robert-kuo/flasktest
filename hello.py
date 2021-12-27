@@ -10,7 +10,7 @@ if os.name == 'nt':
     mainpath = 'd:\\opt_web'
     ip = Opt_func.GetIP()
 else:
-    mainpath = '/home'
+    mainpath = '/aidata/DIPS'
     ip = ''
 
 auth = HTTPBasicAuth()
@@ -26,7 +26,7 @@ def unauthorized():
 
 @myapp.route("/")
 def hello():
-    return 'Hello World! ' +  mainpath + 'ip: ' + ip
+    return 'TS Service... ' +  mainpath + ' ip: ' + ip
 
 @myapp.route('/TS/v0.1/Task',  methods = ['GET'])
 @auth.login_required
@@ -69,7 +69,16 @@ def delete_task(taskname):
 @myapp.route('/TS/v0.1/Task/<string:taskname>/Evaluate',  methods = ['GET'])
 @auth.login_required
 def Evaluate(taskname):
-    return redirect('http://test/RS/v0.1/' + taskname + '/Evaluate', code=302)
+    return redirect('https://reportwebservice.azurewebsites.net/RS/v0.1/' + taskname + '/Evaluate', code=302)
+
+@myapp.route('/TS/v0.1/Task/<string:taskname>/EVR',  methods = ['GET'])
+@auth.login_required
+def Download_EVR(taskname):
+    sfile = os.path.basename(Opt_func.EVRFile(mainpath, taskname))
+    spath = mainpath + '\\' + taskname + '\\'
+    if not os.path.isfile(spath + sfile): abort(404)
+    result = Opt_func.Download_EXCELFile(spath, sfile)
+    return result
 
 @myapp.route('/TS/v0.1/Task/<string:taskname>/<string:dirname>',  methods = ['GET'])
 @auth.login_required
