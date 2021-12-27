@@ -444,7 +444,7 @@ def LoadData_FromDataset(mainpath, taskname):
         df_orders['not_after'] = df_orders['not_after'].astype('datetime64[ns]')
         df_lines['Line Begin'] = df_lines['Line Begin'].astype('datetime64[ns]')
 
-        f = open(os.path.join(dirname, 'parameter.json', 'r'))
+        f = open(os.path.join(dirname, 'parameter.json'), 'r')
         para_data = json.load(f)
         f.close()
 
