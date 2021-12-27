@@ -104,7 +104,7 @@ def updatelines(df_lines, df_molds, shiftday):
     return df_lines
 
 def FileList(mainpath, taskname, dirname):
-    spath = os.path.join(mainpath, taskname)           # mainpath + '\\' + taskname + '\\'
+    spath = os.path.join(mainpath, taskname)
     dpath = os.path.join(spath, dirname)
     lst_file = []
     if os.path.isdir(dpath):
@@ -399,14 +399,14 @@ def TaskConfig_SaveFileAttrib(mainpath, taskname, filename, attrib, foldername):
     return ret
 
 def EVRFile(mainpath, taskname):
-    fn = open(mainpath + '\\' + taskname + '\\TaskConfig.json', 'r')
+    fn = open(os.path.join(os.path.join(mainpath, taskname), 'TaskConfig.json'), 'r')
     json_data = json.load(fn)
     fn.close()
     lst_file = [] if 'Files' not in json_data else json_data['Files']
     efile = ''
     for x in lst_file:
         if x['Attribute'] == 'Evaluation':
-            efile = mainpath + '\\' + taskname + '\\' + x['FileName']
+            efile = os.path.join(os.path.join(mainpath, taskname), x['FileName'])
             if not os.path.isfile(efile): efile = ''
         else:
             continue
@@ -433,7 +433,7 @@ def LoadData_FromDataset(mainpath, taskname):
         df_products = pd.read_csv(os.path.join(dirname, 'products.csv'))
         df_lines = pd.read_csv(os.path.join(dirname, 'lines.csv'))
         df_molds = pd.read_csv(os.path.join(dirname, 'molds.csv'))
-        df_orders = pd.read_csv(os.path.join(dirname, '\\orders.csv'))
+        df_orders = pd.read_csv(os.path.join(dirname, 'orders.csv'))
         df_orderdata.fillna('', inplace=True)
         df_products.fillna('', inplace=True)
         df_lines.fillna('', inplace=True)
@@ -577,10 +577,10 @@ def Production_Trendchart(end_day, df_lines, df_orders_Wait, maxline_count):
 
 def Evaluation_Report(mainpath, taskname, demand_start, demand_end, end_day, maxline_count, lst_onstock_prodcode, lst_onstock_qty, df_orders, df_lines, df_molds):
     n = 1
-    sfile = mainpath + '\\' + taskname + '\\' + taskname + '_EVR.xlsx'
+    sfile = os.path.join(os.path.join(mainpath, taskname), taskname + '_EVR.xlsx')
     while os.path.isfile(sfile):
         n += 1
-        sfile = os.path.dirname(sfile) + '\\' + taskname + '_EVR(' + str(n) + ').xlsx'
+        sfile = os.path.join(os.path.dirname(sfile), taskname + '_EVR(' + str(n) + ').xlsx')
 
     ret = 205 if os.path.isfile(sfile) else 201
     df_summary, df_LCRR, df_orders_Wait, df_orders_notWait = DemandDiffSheet(demand_start, demand_end, end_day, lst_onstock_prodcode, lst_onstock_qty, df_orders, df_lines)

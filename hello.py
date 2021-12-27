@@ -75,8 +75,8 @@ def Evaluate(taskname):
 @auth.login_required
 def Download_EVR(taskname):
     sfile = os.path.basename(Opt_func.EVRFile(mainpath, taskname))
-    spath = mainpath + '\\' + taskname + '\\'
-    if not os.path.isfile(spath + sfile): abort(404)
+    spath = os.path.join(mainpath, taskname)
+    if not os.path.isfile(os.path.join(spath, sfile)): abort(404)
     result = Opt_func.Download_EXCELFile(spath, sfile)
     return result
 
