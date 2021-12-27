@@ -113,3 +113,24 @@ def delete_stage(taskname, dirname):
     ret = Opt_func.DeleteTask(mainpath, taskname, dirname)
     if ret != 200: abort(ret)
     return '', ret
+
+@myapp.route('/TS/v0.1/Task/<string:taskname>/<string:stagename>/StageParameter',  methods = ['GET'])
+@auth.login_required
+def GetStageParameter(taskname, stagename):
+    s, ret = Opt_func.OpenJsonFile(mainpath, os.path.join(taskname, stagename), 'StageParameter.json', 'Trial Stage')
+    if ret != 200: abort(ret)
+    return jsonify(s), ret
+
+@myapp.route('/TS/v0.1/Task/<string:taskname>/<string:stagename>/StageParameter',  methods = ['POST', 'PUT'])
+@auth.login_required
+def UploadtageParameter(taskname, stagename):
+    if not os.path.isdir(os.path.join(os.path.join(mainpath, taskname), stagename)):
+        ret = 404
+    else:
+        sfile = request.files['StageParameter']
+        if Opt_func.StageisProcessing(mainpath, taskname, stagename):
+            ret = 403
+        else:
+            ret = Opt_func.savefile(mainpath, os.path.join(taskname, stagename), sfile, '', 'none')
+    if ret != 200 and ret !=201: abort(ret)
+    return '', ret
