@@ -1,7 +1,7 @@
 from flask import Flask
 from flask import request, abort, jsonify, make_response, redirect
 
-import os
+import os, subprocess
 import Opt_func
 from flask_httpauth import HTTPBasicAuth
 
@@ -12,6 +12,8 @@ if os.name == 'nt':
 else:
     mainpath = '/aidata/DIPS'
     ip = ''
+
+subprocess.Popen(['python', 'teststart.py'])
 
 auth = HTTPBasicAuth()
 
@@ -134,3 +136,13 @@ def UploadtageParameter(taskname, stagename):
             ret = Opt_func.savefile(mainpath, os.path.join(taskname, stagename), sfile, '', 'none')
     if ret != 200 and ret !=201: abort(ret)
     return '', ret
+
+@myapp.route('/TS/v0.1/Task/<string:taskname>/<string:stagename>/RUN',  methods = ['GET'])
+@auth.login_required
+def RunStage(taskname, stagename):
+    return redirect('https://stagelearningservice.azurewebsites.net/SL/v0.1/' + taskname + '/' + stagename + '/RUN', code=302)
+
+@myapp.route('/TS/v0.1/Task/<string:taskname>/<string:stagename>/STOP',  methods = ['GET'])
+@auth.login_required
+def StopStage(taskname, stagename):
+    return redirect('https://stagelearningservice.azurewebsites.net/SL/v0.1/' + taskname + '/' + stagename + '/STOP', code=302)
