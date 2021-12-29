@@ -52,6 +52,17 @@ def sortlist_bynum(lst):
         lst[i] = lst[i][0] + str(int(lst[i][1:]))
     return lst
 
+def GetLineID_sorted(Linename, df_lines):
+    lst_copy = sortlist_bynum(df_lines[df_lines['Usable'] == 'YES'].line_name.to_list())  #['D2', 'Y6', 'Y4', 'Y7', 'Y9', 'Y8', 'Y10']  #lst.copy()
+    return list_index(lst_copy, Linename)
+
+def GetLineName_sorted(index, df_lines):
+    lst_copy = sortlist_bynum(df_lines[df_lines['Usable'] == 'YES'].line_name.to_list())  #['D2', 'Y6', 'Y4', 'Y7', 'Y9', 'Y8', 'Y10']  #lst.copy()
+    return lst_copy[index]
+
+def Get_blockcount(index, lstblk):
+    return len(list(filter(None, lstblk[index])))
+
 def readlines(df_linedata, df_products):
     df_lines = df_linedata.reset_index()
     df_lines.drop(columns=[df_lines.columns[0]], axis=1, inplace=True)
@@ -102,6 +113,49 @@ def updatelines(df_lines, df_molds, shiftday):
         for i in range(df_lines.shape[0]):
             if df_lines.loc[i, 'Line Begin'] != '': df_lines.loc[i, 'Line Begin'] = df_lines.loc[i, 'Line Begin'] + dt.timedelta(days=shiftday)
     return df_lines
+
+def OrderLost_Trendchart(df_order_lost, df_lines, end_day):
+    lst_lines = sortlist_bynum(df_lines[df_lines['Usable'] == 'YES'].line_name.to_list())
+    lst_lines.append('AVERAGE')
+
+    n_lines = len(lst_lines)
+    mindate = df_lines[df_lines['Usable'] == 'YES']['Line Begin'].min()
+    n_days = getdays(dt.datetime.strftime(mindate, '%Y-%m-%d'), end_day)
+    data_array = np.full((n_lines, n_days + 1), 0, dtype=float)
+    for i in range(df_order_lost.shape[0]):
+        lst_dolines = df_order_lost.loc[i, 'Do_Lines'].split(';')
+        p_hour = df_order_lost.loc[i, 'Production_Hours'] / len(lst_dolines)
+        n_a_o = dt.datetime.strptime(df_order_lost.loc[i, 'not_after'], '%Y-%m-%d %H:%M:%S')
+        for litem in lst_dolines:
+            n_b_o = dt.datetime.strptime(df_order_lost.loc[i, 'not_before'], '%Y-%m-%d %H:%M:%S')
+            index = list_index(lst_lines, litem)
+            if index >= 0:
+                n_b_l = df_lines.loc[df_lines[df_lines['line_name'] == litem].index[0], 'Line Begin']
+                if n_b_l > n_b_o: n_b_o = n_b_l
+                ba_day = getdays(dt.datetime.strftime(n_b_o, '%Y-%m-%d'), dt.datetime.strftime(n_a_o, '%Y-%m-%d')) + 1
+                x = getdays(dt.datetime.strftime(mindate, '%Y-%m-%d'), dt.datetime.strftime(n_b_o, '%Y-%m-%d'))
+                for v in range(x, x + ba_day):
+                    data_array[index, v] += p_hour / ba_day
+
+    for i in range(data_array.shape[1]):
+        sum = 0
+        count = 0
+        for k in range(data_array.shape[0] - 1):
+            sum += data_array[k, i]
+            count += 1
+            # if data_array[k, i] > 0: count += 1
+        data_array[data_array.shape[0] - 1, i] = 0 if count == 0 else sum / count
+
+    columns = ['Date']
+    for i in range(data_array.shape[0]):
+        columns.append(lst_lines[i])
+    df_trendlost = pd.DataFrame(columns=columns)
+    for k in range(data_array.shape[1]):
+        lst_tmpdata = [dt.datetime.strftime(mindate + dt.timedelta(days=k), '%m-%d')]
+        for i in range(data_array.shape[0]):
+            lst_tmpdata.append(data_array[i, k])
+        df_trendlost.loc[k] = lst_tmpdata
+    return df_trendlost
 
 def FileList(mainpath, taskname, dirname):
     spath = os.path.join(mainpath, taskname)
@@ -264,6 +318,32 @@ def updateorderdata(df_products, df_orderdata):
         #df_orderdata.loc[i, 'product_code'] = '' if df_tmp.shape[0] < prodid else df_products.loc[df_tmp.index[prodid - 1], 'product_code']
     df_orderdata.drop(columns=['Product_ID'], inplace=True)
     return df_orderdata
+
+def GetEvery_PHs(lst_blk, n_count, df_lines):
+    min_day = lst_blk[0][0][1][:10]
+    for i in range(1, len(lst_blk)):
+        t = lst_blk[i][0][1][:10]
+        if t < min_day: min_day = t
+
+    tx = dt.datetime.strptime(min_day, '%Y-%m-%d')
+    lst_lines = sortlist_bynum(df_lines[df_lines['Usable'] == 'YES'].line_name.to_list())
+    lst_PHs = [0] * n_count
+    for i in range(len(lst_lines)):
+        m = Get_blockcount(i, lst_blk)
+        for k in range(1, m):
+            if lst_blk[i][k][0] == 'Production' or lst_blk[i][k][0] == 'Tunning-Production':
+                start_time = dt.datetime.strptime(lst_blk[i][k][1], '%Y-%m-%d %H:%M:%S')
+                end_time = start_time + dt.timedelta(hours=lst_blk[i][k][2])
+                w1 = (start_time - tx).days
+                w2 = (end_time - tx).days
+                for p in range(w1, w2 + 1):
+                    t1 = tx + dt.timedelta(days=p)
+                    if t1 < start_time: t1 = start_time
+                    t2 = tx + dt.timedelta(days=p+1)
+                    if t2 > end_time: t2 = end_time
+                    v = gethours(t1, t2)
+                    if v > 0: lst_PHs[p] += v
+    return lst_PHs
 
 def Get_orders_WaitandNotWait(df_orders):
     df_orders_notWait = df_orders[np.logical_and(df_orders['O_Status'] != 'Waiting', True)]

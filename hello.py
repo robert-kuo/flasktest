@@ -1,7 +1,7 @@
 from flask import Flask
 from flask import request, abort, jsonify, make_response, redirect
 
-import os, subprocess
+import os  #, subprocess
 import Opt_func
 from flask_httpauth import HTTPBasicAuth
 
@@ -13,7 +13,7 @@ else:
     mainpath = '/aidata/DIPS'
     ip = ''
 
-subprocess.Popen(['python', 'teststart.py'])
+# subprocess.Popen(['python', 'teststart.py'])
 
 auth = HTTPBasicAuth()
 
