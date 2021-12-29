@@ -1,9 +1,12 @@
 from flask import Flask
-from flask import request, abort, jsonify, make_response, redirect
+from flask import request, abort, jsonify, make_response, send_file, redirect
 
-import os  #, subprocess
-import Opt_func
 from flask_httpauth import HTTPBasicAuth
+import os
+import mimetypes, pathlib
+import shutil
+import Opt_func
+
 
 myapp = Flask(__name__)
 if os.name == 'nt':
@@ -12,8 +15,6 @@ if os.name == 'nt':
 else:
     mainpath = '/aidata/DIPS'
     ip = ''
-
-# subprocess.Popen(['python', 'teststart.py'])
 
 auth = HTTPBasicAuth()
 
@@ -25,6 +26,28 @@ def get_password(username):
 @auth.error_handler
 def unauthorized():
     return make_response(jsonify({'error': 'Unauthorized access'}), 401)
+
+
+def Download_File(sfile):
+    sExt = pathlib.Path(sfile).suffix
+    fname = os.path.basename(sfile)
+    if sExt.lower() == '.csv':
+        mtype= 'text/csv'
+    else:
+        mtype = mimetypes.suffix_map[sExt]
+    result = send_file(sfile, mimetype=mtype, attachment_filename=fname, conditional=False)
+    result.headers['x-filename'] = fname
+    result.headers["Access-Control-Expose-Headers"] = 'x-filename'
+    return result
+
+def DIPSName(pathname):
+    pathname = pathname.strip()
+    pathname = pathname.replace('$', '\\' if os.name == 'nt' else '/')
+    if pathname == '':
+        pathname = mainpath
+    else:
+        pathname = os.path.join(mainpath, pathname)
+    return pathname
 
 @myapp.route("/")
 def hello():
@@ -146,3 +169,85 @@ def RunStage(taskname, stagename):
 @auth.login_required
 def StopStage(taskname, stagename):
     return redirect('https://stagelearningservice.azurewebsites.net/SL/v0.1/' + taskname + '/' + stagename + '/STOP', code=302)
+
+@myapp.route('/TS/v0.1/Task/<string:taskname>/<string:stagename>/Record',  methods = ['GET'])
+@auth.login_required
+def Download_Record(taskname, stagename):
+    sfile = 'StageRecord.xlsx'
+    spath = os.path.join(os.path.join(mainpath, taskname), stagename)
+    if not os.path.isfile(spath + sfile): abort(404)
+    result = Opt_func.Download_EXCELFile(spath, sfile)
+    return result
+
+@myapp.route('/TS/v0.1/Task/<string:taskname>/<string:stagename>/Results',  methods = ['GET'])
+@auth.login_required
+def Results_Dir(taskname, stagename):
+    s, ret = Opt_func.DirList(os.path.join(os.path.join(mainpath, taskname), stagename), '', stagename)
+    if ret != 200: abort(ret)
+    return jsonify(s), ret
+
+@myapp.route('/TS/v0.1/Task/<string:taskname>/<string:stagename>/Reports/<string:resultname>',  methods = ['GET'])
+@auth.login_required
+def Download_PSRReport(taskname, stagename, resultname):
+    return redirect('https://reportwebservice.azurewebsites.net/RS/v0.1/' + taskname + '/' + stagename + '/' + resultname, code=302)
+
+# ===  DIPS  ===
+@myapp.route('/TS/v0.1/Directory/DIPS/<string:pathname>',  methods = ['GET'])
+@auth.login_required
+def DIPS_DirList(pathname):
+    pathname = DIPSName(pathname)
+    if os.path.isfile(pathname):
+        ret = Download_File(pathname)
+    else:
+        if not os.path.isdir(pathname): abort(404)
+        ret = jsonify(Opt_func.path_to_dict(pathname))
+    return ret
+
+@myapp.route('/TS/v0.1/Directory/DIPS/<string:pathname>',  methods = ['POST'])
+@auth.login_required
+def DIPS_CreateFolderandfile(pathname):
+    pathname = DIPSName(pathname)
+    if not os.path.isdir(pathname):
+        s  = os.path.normpath(pathname)
+        newfolder = os.path.basename(s)
+        pname = os.path.normpath(s[:-len(newfolder)])
+        if not os.path.isdir(pname): abort(404)
+        os.makedirs(pname + '\\' + newfolder)
+        ret = 200
+    else:
+        if 'file' not in request.files: abort(404)
+        dfile = request.files['file']
+        ret = Opt_func.savefile(pathname, '', dfile, '', 'none')
+    return '', ret
+
+@myapp.route('/TS/v0.1/Directory/DIPS/<string:pathname>',  methods = ['DELETE'])
+@auth.login_required
+def DIPS_DeleteFolder(pathname):
+    pathname = DIPSName(pathname)
+    if not os.path.isdir(pathname): abort(404)
+    lstfiles = os.listdir(pathname)
+    for xfile in lstfiles:
+        if os.path.isfile(pathname + '\\' + xfile):
+            print('file', xfile)
+            os.remove(pathname + '\\' + xfile)
+        else:
+            print('folder', xfile)
+            shutil.rmtree(pathname + '\\' + xfile)
+    return '', 200
+
+@myapp.route('/TS/v0.1/Directory/DIPS/<string:pathname>',  methods = ['PUT'])
+@auth.login_required
+def DIPS_UpdateFolder(pathname):
+    ret = 200
+    pathname = DIPSName(pathname)
+    if os.path.isdir(pathname):
+        if 'name' not in request.form: abort(404)
+        os.rename(pathname, mainpath + '\\' + request.form['name'])
+    else:
+        if os.path.isfile(pathname):
+            if 'file' not in request.files: abort(404)
+            dfile = request.files['file']
+            ret = Opt_func.savefile(os.path.dirname(pathname), '', dfile, os.path.basename(pathname), 'none')
+        else:
+            abort(404)
+    return '', ret
