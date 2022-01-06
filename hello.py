@@ -51,7 +51,7 @@ def DIPSName(pathname):
 
 @myapp.route("/")
 def hello():
-    return 'TS Service... ' +  mainpath + ' ip: ' + ip
+    return 'TS Service..., main path: ' +  mainpath + ', ip: ' + ip
 
 @myapp.route('/TS/v0.1/Task',  methods = ['GET'])
 @auth.login_required
